@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Sprout, FileText, Bookmark, Trash2, Settings, X, Thermometer, Droplets, Zap, Wind, Sun, Save
 } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import { SensorData, ControlState, SavedInsight, Crop } from './types';
 import { INITIAL_CROP_TYPES, DEFAULT_PROMPT_TEMPLATE } from './constants';
@@ -174,16 +174,13 @@ const App = () => {
                 throw new Error("API 키가 설정되지 않았습니다. .env.local 파일에 유효한 GEMINI_API_KEY를 입력해주세요.");
             }
 
-            const ai = new GoogleGenAI({ apiKey: apiKey });
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-            const prompt = interpolatePrompt(customPrompt);
+            const response = await model.generateContent(interpolatePrompt(customPrompt));
 
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.0-flash-exp', // Updated to latest model, or fallback to 'gemini-pro'
-                contents: prompt,
-            });
-
-            setAiAnalysis(response.text() || "분석 결과를 가져올 수 없습니다.");
+            const result = response.response;
+            setAiAnalysis(result.text() || "분석 결과를 가져올 수 없습니다.");
             setLogs(prev => ["[AI] 환경 분석 완료", ...prev].slice(0, 5));
 
         } catch (error: any) {
